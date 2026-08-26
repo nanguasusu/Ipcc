@@ -74,8 +74,8 @@ async function requestWithTimeout(url: string, init: RequestInit, timeoutMs: num
 }
 
 /**
- * Measures an HTTP request from the browser. A CORS-restricted target is retried
- * with no-cors so the UI can honestly report reachability, not a fabricated status.
+ * Measures one browser HTTP reachability request. Cross-origin targets are sent
+ * with no-cors because CORS is a JavaScript read policy, not a connection failure.
  */
 export async function runHttpProbe(target: TestTarget, options: { timeoutMs?: number; signal?: AbortSignal } = {}): Promise<ProbeResult> {
   const startedAt = performance.now();
@@ -84,16 +84,17 @@ export async function runHttpProbe(target: TestTarget, options: { timeoutMs?: nu
   const url = cacheBusted(target.url);
 
   try {
-    const response = await requestWithTimeout(url, { cache: 'no-store', redirect: 'follow', mode: 'cors' }, timeoutMs, options.signal);
+    const response = await requestWithTimeout(url, { cache: 'no-store', redirect: 'follow', mode: 'no-cors' }, timeoutMs, options.signal);
+    const reachable = response.type === 'opaque' || response.ok;
     return {
       targetId: target.id,
-      status: response.ok ? 'success' : 'blocked',
-      success: response.ok,
+      status: reachable ? 'success' : 'blocked',
+      success: reachable,
       latency: Math.round(performance.now() - startedAt),
       timestamp: Date.now(),
-      evidence: 'http',
-      httpStatus: response.status,
-      error: response.ok ? undefined : `HTTP ${response.status}`,
+      evidence: 'reachability',
+      httpStatus: response.type === 'opaque' ? undefined : response.status,
+      error: reachable ? undefined : `HTTP ${response.status}`,
     };
   } catch (error) {
     if (options.signal?.aborted) {
@@ -102,34 +103,14 @@ export async function runHttpProbe(target: TestTarget, options: { timeoutMs?: nu
     if (error instanceof DOMException && error.name === 'AbortError') {
       return timeoutResult(target.id, startedWallClock);
     }
-
-    try {
-      const opaque = await requestWithTimeout(url, { cache: 'no-store', mode: 'no-cors', redirect: 'follow' }, timeoutMs, options.signal);
-      return {
-        targetId: target.id,
-        status: opaque.type === 'opaque' ? 'success' : 'blocked',
-        success: opaque.type === 'opaque',
-        latency: Math.round(performance.now() - startedAt),
-        timestamp: Date.now(),
-        evidence: 'reachability',
-        error: opaque.type === 'opaque' ? undefined : 'Response is not readable in this browser',
-      };
-    } catch (fallbackError) {
-      if (options.signal?.aborted) {
-        throw fallbackError;
-      }
-      if (fallbackError instanceof DOMException && fallbackError.name === 'AbortError') {
-        return timeoutResult(target.id, startedWallClock);
-      }
-      return {
-        targetId: target.id,
-        status: 'error',
-        success: false,
-        latency: null,
-        timestamp: Date.now(),
-        error: 'Network, DNS, or browser policy blocked this probe',
-      };
-    }
+    return {
+      targetId: target.id,
+      status: 'error',
+      success: false,
+      latency: null,
+      timestamp: Date.now(),
+      error: 'Network, DNS, or browser policy blocked this probe',
+    };
   }
 }
 
