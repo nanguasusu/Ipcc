@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Network Lens — Browser-side Network Diagnostics',
-  description: 'Privacy-first browser diagnostics for proxy and VPN network quality.',
+  title: '网络透镜 — 浏览器网络诊断',
+  description: '隐私优先的浏览器网络诊断工具。',
 };
 
 export default function RootLayout({
@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="zh-CN">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
