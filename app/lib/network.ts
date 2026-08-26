@@ -130,21 +130,27 @@ export async function runWithConcurrency<T, R>(items: T[], limit: number, task: 
 
 export function medianProbeResult(results: ProbeResult[]): ProbeResult {
   const successful = results.filter((result) => result.success && result.latency !== null).sort((a, b) => (a.latency as number) - (b.latency as number));
-  if (!successful.length) return results.at(-1)!;
+  if (successful.length < Math.ceil(results.length / 2)) return [...results].reverse().find((result) => !result.success)!;
   return { ...successful[Math.floor(successful.length / 2)], timestamp: Date.now() };
 }
 
 const round = (value: number) => Math.round(value * 10) / 10;
 
 export function calculateStats(results: ProbeResult[]): NetworkStats {
-  const successful = results.filter((result) => result.success && result.latency !== null).map((result) => result.latency as number);
+  const successfulResults = results.filter((result) => result.success && result.latency !== null);
+  const successful = successfulResults.map((result) => result.latency as number);
   const sorted = [...successful].sort((a, b) => a - b);
   const samples = results.length;
   const average = successful.length ? round(successful.reduce((sum, latency) => sum + latency, 0) / successful.length) : null;
   const percentile = (p: number) => sorted.length ? sorted[Math.ceil(sorted.length * p) - 1] : null;
-  const jitter = successful.length > 1
-    ? round(successful.slice(1).reduce((sum, latency, index) => sum + Math.abs(latency - successful[index]), 0) / (successful.length - 1))
-    : null;
+  const latencySeries = new Map<string, number[]>();
+  for (const result of successfulResults) {
+    const series = latencySeries.get(result.targetId) ?? [];
+    series.push(result.latency as number);
+    latencySeries.set(result.targetId, series);
+  }
+  const jitterDeltas = [...latencySeries.values()].flatMap((series) => series.slice(1).map((latency, index) => Math.abs(latency - series[index])));
+  const jitter = jitterDeltas.length ? round(jitterDeltas.reduce((sum, delta) => sum + delta, 0) / jitterDeltas.length) : null;
 
   return {
     samples,
@@ -165,7 +171,7 @@ export function calculateScore(results: ProbeResult[]) {
   const stats = calculateStats(results);
   if (!stats.samples) return null;
   const latencyScore = stats.average === null ? 0 : Math.max(0, 100 - stats.average / 5);
-  const stabilityScore = Math.max(0, stats.successRate - (stats.jitter ?? 100) / 4);
+  const stabilityScore = Math.max(0, stats.successRate - (stats.jitter ?? 0) / 4);
   return Math.round(latencyScore * 0.5 + stabilityScore * 0.5);
 }
 
