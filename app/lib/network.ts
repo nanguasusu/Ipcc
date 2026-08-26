@@ -19,6 +19,7 @@ export interface TestTarget {
   host: string;
   category: 'AI' | 'International' | 'Domestic';
   url: string;
+  icon: string;
 }
 
 export interface NetworkStats {
@@ -36,12 +37,12 @@ export interface NetworkStats {
 }
 
 export const targets: TestTarget[] = [
-  { id: 'cloudflare', name: 'Cloudflare', host: '1.1.1.1', category: 'International', url: 'https://one.one.one.one/cdn-cgi/trace' },
-  { id: 'github', name: 'GitHub', host: 'github.com', category: 'International', url: 'https://github.com/favicon.ico' },
-  { id: 'chatgpt', name: 'ChatGPT', host: 'chatgpt.com', category: 'AI', url: 'https://chatgpt.com/favicon.ico' },
-  { id: 'gemini', name: 'Gemini', host: 'gemini.google.com', category: 'AI', url: 'https://gemini.google.com/favicon.ico' },
-  { id: 'youtube', name: 'YouTube', host: 'youtube.com', category: 'International', url: 'https://www.youtube.com/favicon.ico' },
-  { id: 'bilibili', name: 'Bilibili', host: 'bilibili.com', category: 'Domestic', url: 'https://www.bilibili.com/favicon.ico' },
+  { id: 'cloudflare', name: 'Cloudflare', host: '1.1.1.1', category: 'International', url: 'https://one.one.one.one/cdn-cgi/trace', icon: 'https://cdn.simpleicons.org/cloudflare/f38020' },
+  { id: 'github', name: 'GitHub', host: 'github.com', category: 'International', url: 'https://github.com/favicon.ico', icon: 'https://cdn.simpleicons.org/github/181717' },
+  { id: 'chatgpt', name: 'ChatGPT', host: 'chatgpt.com', category: 'AI', url: 'https://chatgpt.com/favicon.ico', icon: 'https://cdn.simpleicons.org/openai/10a37f' },
+  { id: 'gemini', name: 'Gemini', host: 'gemini.google.com', category: 'AI', url: 'https://gemini.google.com/favicon.ico', icon: 'https://cdn.simpleicons.org/googlegemini/4285f4' },
+  { id: 'youtube', name: 'YouTube', host: 'youtube.com', category: 'International', url: 'https://www.youtube.com/favicon.ico', icon: 'https://cdn.simpleicons.org/youtube/ff0033' },
+  { id: 'bilibili', name: 'Bilibili', host: 'bilibili.com', category: 'Domestic', url: 'https://www.bilibili.com/favicon.ico', icon: 'https://cdn.simpleicons.org/bilibili/00aeec' },
 ];
 
 const timeoutResult = (targetId: string, startedAt: number): ProbeResult => ({
@@ -125,6 +126,12 @@ export async function runWithConcurrency<T, R>(items: T[], limit: number, task: 
   });
   await Promise.all(workers);
   return results;
+}
+
+export function medianProbeResult(results: ProbeResult[]): ProbeResult {
+  const successful = results.filter((result) => result.success && result.latency !== null).sort((a, b) => (a.latency as number) - (b.latency as number));
+  if (!successful.length) return results.at(-1)!;
+  return { ...successful[Math.floor(successful.length / 2)], timestamp: Date.now() };
 }
 
 const round = (value: number) => Math.round(value * 10) / 10;
