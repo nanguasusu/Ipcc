@@ -39,7 +39,7 @@ export interface NetworkStats {
 export const targets: TestTarget[] = [
   { id: 'cloudflare', name: 'Cloudflare', host: '1.1.1.1', category: 'International', url: 'https://one.one.one.one/cdn-cgi/trace', icon: 'https://cdn.simpleicons.org/cloudflare/f38020' },
   { id: 'github', name: 'GitHub', host: 'github.com', category: 'International', url: 'https://github.com/favicon.ico', icon: 'https://cdn.simpleicons.org/github/181717' },
-  { id: 'chatgpt', name: 'ChatGPT', host: 'chatgpt.com', category: 'AI', url: 'https://chatgpt.com/favicon.ico', icon: 'https://cdn.simpleicons.org/openai/10a37f' },
+  { id: 'chatgpt', name: 'ChatGPT', host: 'chatgpt.com', category: 'AI', url: 'https://chatgpt.com/favicon.ico', icon: '/openai-monoblossom.svg' },
   { id: 'gemini', name: 'Gemini', host: 'gemini.google.com', category: 'AI', url: 'https://gemini.google.com/favicon.ico', icon: 'https://cdn.simpleicons.org/googlegemini/4285f4' },
   { id: 'youtube', name: 'YouTube', host: 'youtube.com', category: 'International', url: 'https://www.youtube.com/favicon.ico', icon: 'https://cdn.simpleicons.org/youtube/ff0033' },
   { id: 'bilibili', name: 'Bilibili', host: 'bilibili.com', category: 'Domestic', url: 'https://www.bilibili.com/favicon.ico', icon: 'https://cdn.simpleicons.org/bilibili/00aeec' },
